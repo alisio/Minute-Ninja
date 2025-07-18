@@ -1,0 +1,85 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:03.000
+Scrum Master (Ana): Bom dia, equipe! Vamos começar nossa daily.
+
+2
+00:00:03.500 --> 00:00:07.000
+Ana: João, pode começar compartilhando seu progresso?
+
+3
+00:00:07.500 --> 00:00:11.000
+João: Ontem finalizei a integração da API de pagamentos. Testes unitários foram executados com sucesso.
+
+4
+00:00:11.500 --> 00:00:14.000
+Ana: Ótimo! Algum impedimento?
+
+5
+00:00:14.500 --> 00:00:17.000
+João: Preciso de acesso ao ambiente de homologação para validar o fluxo completo.
+
+6
+00:00:17.500 --> 00:00:20.000
+Ana: Maria, consegue ajudar o João com isso?
+
+7
+00:00:20.500 --> 00:00:23.000
+Maria: Sim, vou liberar o acesso ainda hoje.
+
+8
+00:00:23.500 --> 00:00:27.000
+Ana: Thank you, Maria. Now, can you share your status?
+
+9
+00:00:27.500 --> 00:00:31.000
+Maria: Yesterday I fixed bugs in the registration module. Today I will review João's PR and start integration tests.
+
+10
+00:00:31.500 --> 00:00:34.000
+Ana: Any impediments, Maria?
+
+11
+00:00:34.500 --> 00:00:36.000
+Maria: No, everything is fine for now.
+
+12
+00:00:36.500 --> 00:00:39.000
+Ana: Pedro, your turn.
+
+13
+00:00:39.500 --> 00:00:43.000
+Pedro: I finished the sprint documentation. Today I will support the integration tests.
+
+14
+00:00:43.500 --> 00:00:46.000
+Ana: Any blockers, Pedro?
+
+15
+00:00:46.500 --> 00:00:48.000
+Pedro: No, no blockers.
+
+16
+00:00:48.500 --> 00:00:52.000
+Ana: Recapping: Maria will grant access to João, everyone is focused on integration tests today.
+
+17
+00:00:52.500 --> 00:00:55.000
+Ana: Any questions or extra points?
+
+18
+00:00:55.500 --> 00:00:57.000
+João: Nothing from my side.
+
+19
+00:00:57.500 --> 00:00:59.000
+Maria: All good.
+
+20
+00:00:59.500 --> 00:01:01.000
+Pedro: All good.
+
+21
+00:01:01.500 --> 00:01:04.000
+Ana: Obrigada, pessoal! Encerramos a daily.
