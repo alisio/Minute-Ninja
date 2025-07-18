@@ -1,3 +1,5 @@
+![Project Banner](assets/banner.png)
+
 # MinuteNinja — VTT Transcription Processor and Meeting Minutes Generator
 
 Processing VTT (or text) transcriptions and generating formatted meeting minutes using an OpenAI-compatible language model.
