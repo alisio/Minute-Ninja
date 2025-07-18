@@ -277,10 +277,10 @@ Basierend auf dem untenstehenden Transkript erstellen Sie ein formelles Sitzungs
 
 def save_summary(summary, input_file_path, language="english"):
     """
-    Save the generated minutes to a file with '_summary_{language}' suffix.
+    Save the generated minutes to a file with '_summary_{language}.txt' suffix.
     """
     input_path = Path(input_file_path)
-    output_file = input_path.parent / f"{input_path.stem}_summary_{language}{input_path.suffix}"
+    output_file = input_path.parent / f"{input_path.stem}_summary_{language}.txt"
     
     try:
         with open(output_file, 'w', encoding='utf-8') as f:
