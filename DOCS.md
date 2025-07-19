@@ -10,7 +10,7 @@ This document provides an index of all documentation available for MinuteNinja.
 
 ### Performance & Analysis
 - **[LLM_Performance_Analysis_EN.md](LLM_Performance_Analysis_EN.md)** - Comprehensive performance analysis of 13 LLM models
-- **[modelo_comparison_report.md](modelo_comparison_report.md)** - Original Portuguese analysis report
+- **[LLM_Performance_Analysis_Report.md](LLM_Performance_Analysis_Report.md)** - Original Portuguese analysis report
 
 ### Generated Examples
 - **Test outputs** - Various `test_large_*.txt` files showing model outputs
