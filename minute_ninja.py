@@ -57,7 +57,13 @@ SPEAKER_PATTERN = r"^([A-ZÁ-Ú][a-zá-ú]+):"  # Ex: John:
 
 def clean_vtt_text(vtt_content):
     """
-    Remove metadata, noise and normalize VTT text.
+    Cleans and normalizes VTT transcription text by removing metadata, noise, and speaker identifiers.
+
+    Args:
+        vtt_content (str): The raw content of a VTT transcription file.
+
+    Returns:
+        str: The cleaned and normalized transcription text, ready for further processing.
     """
     # Remove timestamps, cue numbers and headers
     lines = vtt_content.splitlines()
@@ -87,14 +93,27 @@ def clean_vtt_text(vtt_content):
 
 def consolidate_speaker_fragments(text):
     """
-    Join fragmented speech from the same speaker.
+    Joins fragmented speech from the same speaker into a single segment.
+
+    Args:
+        text (str): The transcription text with possible fragmented speaker lines.
+
+    Returns:
+        str: The text with speaker fragments consolidated.
     """
     # Simple example: can be expanded to keep speaker names if needed
     return re.sub(r"\s*\n\s*", " ", text)
 
 def segment_by_semantics(text, max_tokens=400):
     """
-    Segment text by topics using natural punctuation and token limits.
+    Segments text into chunks based on sentence boundaries and a maximum token limit.
+
+    Args:
+        text (str): The input text to segment.
+        max_tokens (int, optional): Maximum number of tokens per segment. Defaults to 400.
+
+    Returns:
+        list of str: List of text segments, each within the token limit.
     """
     # Split by sentences and try to group up to max_tokens (approx. 4 chars/token)
     sentences = re.split(r"(?<=[.!?])\s+", text)
@@ -112,7 +131,13 @@ def segment_by_semantics(text, max_tokens=400):
 
 def extract_essential_info(text):
     """
-    Identify decisions, action points, conclusions and deadlines.
+    Extracts essential meeting information such as decisions, actions, and conclusions from the text.
+
+    Args:
+        text (str): The input text to analyze.
+
+    Returns:
+        dict: Dictionary with keys 'decisions', 'actions', and 'conclusions', each containing a list of extracted strings.
     """
     # Search for common patterns (can be expanded)
     decisions = re.findall(r"(it was decided that.*?\.|we decided to.*?\.)", text, re.IGNORECASE)
@@ -126,7 +151,16 @@ def extract_essential_info(text):
 
 def preprocess_vtt_for_summarization(vtt_content, max_tokens=400):
     """
-    Complete preprocessing pipeline for efficient summarization.
+    Complete preprocessing pipeline for VTT content, preparing it for summarization.
+
+    Args:
+        vtt_content (str): The raw VTT transcription content.
+        max_tokens (int, optional): Maximum number of tokens per segment. Defaults to 400.
+
+    Returns:
+        tuple: (segments, essentials)
+            segments (list of str): Segmented and cleaned text.
+            essentials (list of dict): List of dictionaries with extracted essential info for each segment.
     """
     cleaned = clean_vtt_text(vtt_content)
     consolidated = consolidate_speaker_fragments(cleaned)
@@ -136,7 +170,13 @@ def preprocess_vtt_for_summarization(vtt_content, max_tokens=400):
 
 def parse_arguments():
     """
-    Process command line arguments.
+    Parses and validates command line arguments for the script.
+
+    Returns:
+        argparse.Namespace: Parsed arguments with attributes for file path, model, API base, API key, and language.
+
+    Raises:
+        SystemExit: If required arguments are missing or invalid.
     """
     parser = argparse.ArgumentParser(description='Generate meeting minutes from a transcript.')
     parser.add_argument('file_path', help='Path to the transcript file')
@@ -165,7 +205,16 @@ def parse_arguments():
 
 def read_transcript(file_path):
     """
-    Read the transcript file.
+    Reads the transcript file from the given path.
+
+    Args:
+        file_path (str): Path to the transcript file.
+
+    Returns:
+        str: The content of the transcript file.
+
+    Raises:
+        SystemExit: If the file cannot be read.
     """
     print(f"[STATUS] Reading transcript file: {file_path}")
     try:
@@ -177,29 +226,31 @@ def read_transcript(file_path):
 
 def generate_summary(transcript, model, api_base, api_key, language="english"):
     """
-    Generate minutes from the transcript using the specified LLM model.
+    Generates meeting minutes from a transcript using a specified LLM model via OpenAI-compatible API.
+
+    Args:
+        transcript (str): The cleaned transcript text.
+        model (str): The LLM model name to use.
+        api_base (str): The base URL for the OpenAI-compatible API.
+        api_key (str): The API key for authentication.
+        language (str, optional): Language for the generated minutes. Defaults to "english".
+
+    Returns:
+        str: The generated meeting minutes as returned by the LLM.
+
+    Raises:
+        SystemExit: If the API call fails.
     """
     print(f"[STATUS] Starting transcript processing...")
     start_time = time.time()
-    
+
     # Process the transcript
     print("[STATUS] Cleaning and segmenting text...")
-    segments, essentials = preprocess_vtt_for_summarization(transcript)
-    
-    # Prepare the prompt with extracted essential information
-    print("[STATUS] Extracting essential information...")
-    decisions = [item for segment in essentials for item in segment["decisions"]]
-    actions = [item for segment in essentials for item in segment["actions"]]
-    conclusions = [item for segment in essentials for item in segment["conclusions"]]
-    
-    # Configure API client
-    print(f"[STATUS] Connecting to API ({api_base})...")
-    client = OpenAI(
-        base_url=api_base,
-        api_key=api_key
-    )
-    
-    # Prompt templates 100% no idioma de saída
+    # Segment with a very conservative max_tokens to avoid API limits (1500 words ~ 3000 tokens)
+    max_tokens_per_segment = 1500
+    segments, essentials = preprocess_vtt_for_summarization(transcript, max_tokens=max_tokens_per_segment)
+
+    # Prepare prompt templates
     lang_prompts = {
         "english": """
 Based on the transcript below, generate a formal meeting minutes document in English containing:
@@ -245,39 +296,63 @@ Basierend auf dem untenstehenden Transkript erstellen Sie ein formelles Sitzungs
 4. Getroffene Entscheidungen
 5. Zu ergreifende Maßnahmen
 6. Schlussfolgerungen
-""",
+"""
     }
     prompt_template = lang_prompts.get(language.lower(), lang_prompts["english"])
-    prompt = (
-        prompt_template
-        + f"\n\nTranscript:\n{''.join(segments)}\n\n"
-        + (
-            f"{'Identified decisions:' if language.lower() == 'english' else ''} {' '.join(decisions)}\n"
-            f"{'Identified actions:' if language.lower() == 'english' else ''} {' '.join(actions)}\n"
-            f"{'Identified conclusions:' if language.lower() == 'english' else ''} {' '.join(conclusions)}\n"
-        )
-    )
-    
-    try:
-        print(f"[STATUS] Sending request to model {model}...")
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": f"You are an assistant specialized in creating precise and well-formatted meeting minutes in {language}."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3
-        )
-        elapsed_time = time.time() - start_time
-        print(f"[STATUS] Summary generated successfully! (Time: {elapsed_time:.2f}s)")
-        return response.choices[0].message.content
-    except Exception as e:
-        print(f"Error generating minutes: {e}")
-        sys.exit(1)
 
+    # Configure API client
+    print(f"[STATUS] Connecting to API ({api_base})...")
+    client = OpenAI(
+        base_url=api_base,
+        api_key=api_key
+    )
+
+    all_summaries = []
+    for idx, segment in enumerate(segments):
+        print(f"[STATUS] Sending request to model {model} for segment {idx+1}/{len(segments)}...")
+        # Extract essentials for this segment
+        essentials_seg = extract_essential_info(segment)
+        decisions = essentials_seg["decisions"]
+        actions = essentials_seg["actions"]
+        conclusions = essentials_seg["conclusions"]
+        prompt = (
+            prompt_template
+            + f"\n\nTranscript:\n{segment}\n\n"
+            + (
+                f"{'Identified decisions:' if language.lower() == 'english' else ''} {' '.join(decisions)}\n"
+                f"{'Identified actions:' if language.lower() == 'english' else ''} {' '.join(actions)}\n"
+                f"{'Identified conclusions:' if language.lower() == 'english' else ''} {' '.join(conclusions)}\n"
+            )
+        )
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": f"You are an assistant specialized in creating precise and well-formatted meeting minutes in {language}."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3
+            )
+            all_summaries.append(response.choices[0].message.content)
+        except Exception as e:
+            print(f"Error generating minutes for segment {idx+1}: {e}")
+            sys.exit(1)
+
+    elapsed_time = time.time() - start_time
+    print(f"[STATUS] Summary generated successfully! (Time: {elapsed_time:.2f}s)")
+    # Join all summaries with clear separation
+    return '\n\n---\n\n'.join(all_summaries)
 def save_summary(summary, input_file_path, language="english"):
     """
-    Save the generated minutes to a file with '_summary_{language}.txt' suffix.
+    Saves the generated meeting minutes to a file with a language-specific suffix.
+
+    Args:
+        summary (str): The generated meeting minutes.
+        input_file_path (str): Path to the original transcript file.
+        language (str, optional): Language of the minutes, used in the output filename. Defaults to "english".
+
+    Raises:
+        SystemExit: If the file cannot be saved.
     """
     input_path = Path(input_file_path)
     output_file = input_path.parent / f"{input_path.stem}_summary_{language}.txt"
@@ -289,10 +364,15 @@ def save_summary(summary, input_file_path, language="english"):
     except Exception as e:
         print(f"Error saving minutes: {e}")
         sys.exit(1)
-
 def main():
     """
-    Main function that coordinates the execution flow.
+    Main function that coordinates the execution flow of the script.
+
+    Steps:
+        1. Parses command line arguments.
+        2. Reads the transcript file.
+        3. Generates meeting minutes using an LLM.
+        4. Saves the generated minutes to a file.
     """
     print("[STATUS] Starting processing...")
     
