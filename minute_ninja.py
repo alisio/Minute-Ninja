@@ -43,12 +43,12 @@ Usage:
     python minute_ninja.py path/to/transcript.txt --language "spanish" --temperature 0.5
 
 Output:
-    A file with the same name as the original transcript and '_summary_{language}' suffix will be generated
+    A file with the same name as the original transcript and '_summary_{language}_{model}' suffix will be generated
     in the same folder as the input file.
 
 Example:
     Input:  meeting_15_jun.txt
-    Output: meeting_15_jun_summary_english.txt
+    Output: meeting_15_jun_summary_english_gpt-4.txt
 """
 
 # List of noises and patterns to remove
@@ -320,12 +320,42 @@ Basierend auf dem untenstehenden Transkript erstellen Sie ein formelles Sitzungs
         print(f"Error generating minutes: {e}")
         sys.exit(1)
 
-def save_summary(summary, input_file_path, language="english"):
+def sanitize_filename(filename):
     """
-    Save the generated minutes to a file with '_summary_{language}.txt' suffix.
+    Sanitize a string to be safe for use as a filename on Linux, Windows, and macOS.
+    """
+    # Replace invalid characters with underscores
+    invalid_chars = r'[<>:"/\\|?*\x00-\x1f]'
+    sanitized = re.sub(invalid_chars, '_', filename)
+    
+    # Remove leading/trailing dots and spaces
+    sanitized = sanitized.strip('. ')
+    
+    # Handle reserved names on Windows
+    reserved_names = {
+        'CON', 'PRN', 'AUX', 'NUL',
+        'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
+        'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'
+    }
+    if sanitized.upper() in reserved_names:
+        sanitized = f"{sanitized}_model"
+    
+    # Limit length to prevent filesystem issues
+    if len(sanitized) > 50:
+        sanitized = sanitized[:50]
+    
+    # Ensure we don't end with a dot (Windows issue)
+    sanitized = sanitized.rstrip('.')
+    
+    return sanitized if sanitized else "unknown_model"
+
+def save_summary(summary, input_file_path, language="english", model_name=""):
+    """
+    Save the generated minutes to a file with '_summary_{language}_{model}.txt' suffix.
     """
     input_path = Path(input_file_path)
-    output_file = input_path.parent / f"{input_path.stem}_summary_{language}.txt"
+    sanitized_model = sanitize_filename(model_name) if model_name else "unknown_model"
+    output_file = input_path.parent / f"{input_path.stem}_summary_{language}_{sanitized_model}.txt"
     
     try:
         with open(output_file, 'w', encoding='utf-8') as f:
@@ -366,7 +396,7 @@ def main():
     )
     
     # Save the minutes
-    save_summary(summary, args.file_path, args.language)
+    save_summary(summary, args.file_path, args.language, args.model)
     
     print("[STATUS] Processing completed!")
 
