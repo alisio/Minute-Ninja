@@ -34,7 +34,7 @@ Usage:
     python minute_ninja.py path/to/transcript.txt --model "model-name"
 
     # With optional parameters
-    python minute_ninja.py path/to/transcript.vtt --model "gpt-4" --api-base "https://api.openai.com/v1" --api-key "your-api-key" --language "portuguese" --context-size 32000 --segment-size 400 --temperature 0.3 --top-p 1.0 --title "Weekly Team Meeting" --date "2025-07-21"
+    python minute_ninja.py path/to/transcript.vtt --model "gpt-4" --api-base "https://api.openai.com/v1" --api-key "your-api-key" --language "portuguese" --context-size 32000 --segment-size 400 --temperature 0.3 --top-p 1.0 --title "Weekly Team Meeting" --date "2025-07-21" --output "/custom/path/meeting_minutes.txt"
 
     # Using environment variables
     # export LLM_CHAT="gpt-3.5-turbo"
@@ -44,11 +44,15 @@ Usage:
 
 Output:
     A file with the same name as the original transcript and '_summary_{language}_{model}' suffix will be generated
-    in the same folder as the input file.
+    in the same folder as the input file, unless a custom output path is specified with --output.
 
 Example:
     Input:  meeting_15_jun.txt
     Output: meeting_15_jun_summary_english_gpt-4.txt
+    
+    With custom output:
+    python minute_ninja.py meeting.vtt --model "gpt-4" --output "/path/to/custom_minutes.txt"
+    Output: /path/to/custom_minutes.txt
 """
 
 # List of noises and patterns to remove
@@ -165,6 +169,8 @@ def parse_arguments():
     parser.add_argument('--title', help='Meeting title (if not provided, will be inferred)', 
                         default=None)
     parser.add_argument('--date', help='Meeting date (if not provided, will be inferred)', 
+                        default=None)
+    parser.add_argument('--output', help='Custom output file path (if not provided, will be generated automatically)', 
                         default=None)
     
     args = parser.parse_args()
@@ -349,13 +355,21 @@ def sanitize_filename(filename):
     
     return sanitized if sanitized else "unknown_model"
 
-def save_summary(summary, input_file_path, language="english", model_name=""):
+def save_summary(summary, input_file_path, language="english", model_name="", custom_output_path=None):
     """
     Save the generated minutes to a file with '_summary_{language}_{model}.txt' suffix.
+    If custom_output_path is provided, use that instead of generating the filename.
     """
-    input_path = Path(input_file_path)
-    sanitized_model = sanitize_filename(model_name) if model_name else "unknown_model"
-    output_file = input_path.parent / f"{input_path.stem}_summary_{language}_{sanitized_model}.txt"
+    if custom_output_path:
+        # Use custom output path
+        output_file = Path(custom_output_path)
+        # Ensure the directory exists
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        # Generate filename automatically
+        input_path = Path(input_file_path)
+        sanitized_model = sanitize_filename(model_name) if model_name else "unknown_model"
+        output_file = input_path.parent / f"{input_path.stem}_summary_{language}_{sanitized_model}.txt"
     
     try:
         with open(output_file, 'w', encoding='utf-8') as f:
@@ -396,7 +410,7 @@ def main():
     )
     
     # Save the minutes
-    save_summary(summary, args.file_path, args.language, args.model)
+    save_summary(summary, args.file_path, args.language, args.model, args.output)
     
     print("[STATUS] Processing completed!")
 
