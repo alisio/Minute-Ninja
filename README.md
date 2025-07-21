@@ -254,6 +254,18 @@ Transcript: {transcript}
 Similar structured templates are used for all supported languages, ensuring consistent formal output across different linguistic contexts. When title and date are not explicitly provided, the AI will analyze the transcript content and infer appropriate values, clearly marking them as "Inferred" in the output.
 
 ## Documentation
+
+## Limitações e Uso Responsável
+
+## Limitations and Responsible Use
+
+- MinuteNinja uses AI to infer information and generate summaries.
+- AI may present biases or errors; human review is recommended.
+- Sensitive data is processed in accordance with privacy guidelines (LGPD/GDPR).
+- Do not use the system for critical decisions without additional validation.
+
+**For suggestions or corrections, please contribute via Pull Request.**
+
 📚 **[Complete Documentation Index](DOCS.md)** - Navigate all project documentation including performance analysis, technical specifications, and usage examples.
 
 ## Contributing
