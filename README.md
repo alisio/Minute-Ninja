@@ -30,9 +30,13 @@ MinuteNinja is a tool for processing meeting transcriptions in VTT (or text) for
 ## Features
 - Cleans and preprocesses transcripts (removes timestamps, noise, repeated speaker labels)
 - Consolidates speech fragments from the same participant
-- Topic segmentation with token limits
+- Topic segmentation with configurable token limits
 - Extracts essential information (decisions, actions, conclusions)
 - Generates formal minutes in multiple languages
+- **Configurable context size and text segmentation parameters**
+- **Customizable inference parameters (temperature, top_p, max_tokens)**
+- **Automatic inference of meeting title and date when not provided**
+- **Fine-tuned control over model behavior and output quality**
 
 ## Performance Analysis
 We conducted a comprehensive evaluation of 13 different LLM models across two endpoints (DeepInfra API and Ollama Local) to optimize MinuteNinja's performance. Key findings:
@@ -67,10 +71,21 @@ Run the main script, providing the path to the transcript file and the desired m
 ```bash
 python minute_ninja.py path/to/transcript.vtt --model "gpt-4"
 ```
-Additional parameters:
+
+### Basic Parameters:
+- `--model`: LLM model to use
 - `--api-base`: OpenAI API base URL (e.g., https://api.openai.com/v1)
 - `--api-key`: API key
 - `--language`: Language for the generated minutes (english, portuguese, spanish, etc.)
+
+### Advanced Parameters:
+- `--context-size`: Model context size in tokens (default: 32000)
+- `--segment-size`: Text segment size in tokens for processing (default: 400)
+- `--temperature`: Temperature for text generation 0.0-2.0 (default: 0.3)
+- `--top-p`: Top-p value for nucleus sampling 0.0-1.0 (default: 1.0)
+- `--max-tokens`: Maximum tokens to generate in response
+- `--title`: Meeting title (if not provided, will be inferred automatically)
+- `--date`: Meeting date (if not provided, will be inferred automatically)
 
 ## Advanced Configuration
 
@@ -101,20 +116,57 @@ python minute_ninja.py transcript.vtt --model "qwen3:14b" --api-base "http://loc
 python minute_ninja.py transcript.vtt --model "gemma3:4b" --api-base "http://localhost:11434/v1"
 ```
 
+### Advanced Parameter Configuration
+
+#### **Model Behavior Control**
+```bash
+# Conservative, formal output
+python minute_ninja.py transcript.vtt --model "gpt-4" --temperature 0.1 --top-p 0.8
+
+# Creative, detailed output  
+python minute_ninja.py transcript.vtt --model "gpt-4" --temperature 0.7 --top-p 1.0
+
+# Concise output with token limit
+python minute_ninja.py transcript.vtt --model "gpt-4" --max-tokens 500
+```
+
+#### **Processing Optimization**
+```bash
+# Large files with small context models
+python minute_ninja.py large_transcript.vtt --context-size 8000 --segment-size 200
+
+# Detailed processing for complex meetings
+python minute_ninja.py complex_meeting.vtt --context-size 32000 --segment-size 800
+
+# Meeting with known details
+python minute_ninja.py transcript.vtt \
+  --title "Q4 Planning Meeting" \
+  --date "2025-07-21" \
+  --language "portuguese"
+```
+
 ### Environment Variables
 For convenience, set these environment variables:
 ```bash
 # For OpenAI API
 export OPENAI_API_BASE="https://api.openai.com/v1"
 export OPENAI_API_KEY="your-api-key"
+export LLM_CHAT="gpt-4"
 
 # For DeepInfra API
 export OPENAI_API_BASE="https://api.deepinfra.com/v1/openai/"
 export OPENAI_API_KEY="your-deepinfra-key"
+export LLM_CHAT="meta-llama/Llama-4-Scout-17B-16E-Instruct"
 
 # For Ollama Local
 export OPENAI_API_BASE="http://localhost:11434/v1"
 export OPENAI_API_KEY=""
+export LLM_CHAT="gemma3:4b"
+```
+
+Then you can run simply:
+```bash
+python minute_ninja.py transcript.vtt --language "portuguese" --temperature 0.5
 ```
 
 ## Examples
@@ -123,19 +175,34 @@ export OPENAI_API_KEY=""
 python minute_ninja.py path/to/transcript.vtt --model "gpt-4"
 ```
 
-### Using top-performing models
+### Using top-performing models with advanced configuration
 ```bash
-# Fastest overall (DeepInfra API)
+# Fastest overall with custom parameters (DeepInfra API)
 python minute_ninja.py transcript.vtt \
   --model "meta-llama/Llama-4-Scout-17B-16E-Instruct" \
   --api-base "https://api.deepinfra.com/v1/openai/" \
-  --api-key "YOUR_DEEPINFRA_KEY"
+  --api-key "YOUR_DEEPINFRA_KEY" \
+  --temperature 0.5 \
+  --context-size 16000 \
+  --segment-size 300
 
-# Best local model (zero cost)
+# Best local model with title and date inference (zero cost)
 python minute_ninja.py transcript.vtt \
   --model "deepseek-r1:1.5b" \
   --api-base "http://localhost:11434/v1" \
-  --language "english"
+  --language "english" \
+  --title "Weekly Team Meeting" \
+  --date "2025-07-21"
+
+# High-quality output with fine-tuned parameters
+python minute_ninja.py transcript.vtt \
+  --model "gemma3:4b" \
+  --api-base "http://localhost:11434/v1" \
+  --language "portuguese" \
+  --temperature 0.3 \
+  --top-p 0.9 \
+  --max-tokens 1000 \
+  --segment-size 500
 ```
 
 ### Traditional OpenAI API
@@ -167,10 +234,11 @@ The tool supports generating meeting minutes in the following languages:
 - **German** - Formelle Sitzungsprotokolle
 
 ### Prompt Templates
-MinuteNinja uses optimized prompt templates for each language. The English template structure is:
+MinuteNinja uses optimized prompt templates for each language. The English template structure includes automatic title and date inference:
 
 ```
 Based on the transcript below, generate a formal meeting minutes document in English containing:
+0. Meeting title and date (if not provided below, infer from context and mark as "Inferred")
 1. List of participants identified in the transcript
 2. Meeting agenda
 3. Main points discussed
@@ -178,10 +246,12 @@ Based on the transcript below, generate a formal meeting minutes document in Eng
 5. Actions to be taken
 6. Conclusions
 
+Meeting Title: [if provided]
+Meeting Date: [if provided]
 Transcript: {transcript}
 ```
 
-Similar structured templates are used for all supported languages, ensuring consistent formal output across different linguistic contexts.
+Similar structured templates are used for all supported languages, ensuring consistent formal output across different linguistic contexts. When title and date are not explicitly provided, the AI will analyze the transcript content and infer appropriate values, clearly marking them as "Inferred" in the output.
 
 ## Documentation
 📚 **[Complete Documentation Index](DOCS.md)** - Navigate all project documentation including performance analysis, technical specifications, and usage examples.
