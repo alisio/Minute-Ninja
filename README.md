@@ -37,6 +37,8 @@ MinuteNinja is a tool for processing meeting transcriptions in VTT (or text) for
 - **Customizable inference parameters (temperature, top_p, max_tokens)**
 - **Automatic inference of meeting title and date when not provided**
 - **Fine-tuned control over model behavior and output quality**
+- **Custom output file paths with automatic directory creation**
+- **Model name inclusion in output filenames with cross-platform sanitization**
 
 ## Performance Analysis
 We conducted a comprehensive evaluation of 13 different LLM models across two endpoints (DeepInfra API and Ollama Local) to optimize MinuteNinja's performance. Key findings:
@@ -86,6 +88,7 @@ python minute_ninja.py path/to/transcript.vtt --model "gpt-4"
 - `--max-tokens`: Maximum tokens to generate in response
 - `--title`: Meeting title (if not provided, will be inferred automatically)
 - `--date`: Meeting date (if not provided, will be inferred automatically)
+- `--output`: Custom output file path (if not provided, will be generated automatically)
 
 ## Advanced Configuration
 
@@ -130,6 +133,17 @@ python minute_ninja.py transcript.vtt --model "gpt-4" --temperature 0.7 --top-p 
 python minute_ninja.py transcript.vtt --model "gpt-4" --max-tokens 500
 ```
 
+#### **Custom Output Path**
+```bash
+# Specify custom output location
+python minute_ninja.py transcript.vtt --model "gpt-4" --output "/custom/path/meeting_minutes.txt"
+
+# Organize outputs by date
+python minute_ninja.py transcript.vtt --model "gpt-4" --output "./minutes/2025-07-21/team_meeting.txt"
+
+# Different formats for different purposes
+python minute_ninja.py transcript.vtt --model "gpt-4" --output "./reports/executive_summary.md"
+```
 #### **Processing Optimization**
 ```bash
 # Large files with small context models
@@ -143,6 +157,15 @@ python minute_ninja.py transcript.vtt \
   --title "Q4 Planning Meeting" \
   --date "2025-07-21" \
   --language "portuguese"
+
+# Custom output with all parameters
+python minute_ninja.py transcript.vtt \
+  --model "gpt-4" \
+  --title "Board Meeting" \
+  --date "2025-07-21" \
+  --language "english" \
+  --temperature 0.2 \
+  --output "./board_meetings/july_2025_minutes.txt"
 ```
 
 ### Environment Variables
@@ -167,6 +190,9 @@ export LLM_CHAT="gemma3:4b"
 Then you can run simply:
 ```bash
 python minute_ninja.py transcript.vtt --language "portuguese" --temperature 0.5
+
+# Or with custom output
+python minute_ninja.py transcript.vtt --language "portuguese" --output "./meeting_notes/$(date +%Y-%m-%d)_summary.txt"
 ```
 
 ## Examples
@@ -194,7 +220,7 @@ python minute_ninja.py transcript.vtt \
   --title "Weekly Team Meeting" \
   --date "2025-07-21"
 
-# High-quality output with fine-tuned parameters
+# High-quality output with fine-tuned parameters and custom output
 python minute_ninja.py transcript.vtt \
   --model "gemma3:4b" \
   --api-base "http://localhost:11434/v1" \
@@ -202,7 +228,8 @@ python minute_ninja.py transcript.vtt \
   --temperature 0.3 \
   --top-p 0.9 \
   --max-tokens 1000 \
-  --segment-size 500
+  --segment-size 500 \
+  --output "./atas/reuniao_detalhada.txt"
 ```
 
 ### Traditional OpenAI API
@@ -223,7 +250,29 @@ python minute_ninja.py path/to/transcript.vtt \
 ```
 
 ## Output
-The output file will be saved in the same directory as the input file, with the suffix `_summary_<language>.txt`.
+The output file will be saved with the format `{input_filename}_summary_{language}_{model_name}.txt` in the same directory as the input file, unless a custom output path is specified with `--output`.
+
+**Output File Naming:**
+- **Default**: `meeting_transcript_summary_english_gpt-4.txt`
+- **With Custom Output**: Uses the exact path specified in `--output` parameter
+- **Model Name Sanitization**: Special characters in model names are replaced with underscores for filesystem compatibility
+
+**Examples:**
+```
+Input: board_meeting.vtt
+Model: gpt-4
+Language: portuguese
+Output: board_meeting_summary_portuguese_gpt-4.txt
+
+Input: team_sync.vtt  
+Model: meta-llama/Llama-4-Scout-17B
+Language: english
+Output: team_sync_summary_english_meta-llama_Llama-4-Scout-17B.txt
+
+With --output parameter:
+Input: any_meeting.vtt
+Output: /custom/path/executive_minutes.txt
+```
 
 ## Supported Languages
 The tool supports generating meeting minutes in the following languages:
