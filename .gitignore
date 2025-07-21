@@ -15,3 +15,59 @@ $RECYCLE.BIN/
 
 # Visual Studio Code
 .vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Azure Storage Emulator (Azurite)
+__azurite_db_*
+__blobstorage__/
+__queuestorage__/
+__tablestorage__/
+
+# Test files and outputs
+test_*.txt
+*_summary_*.txt
+*_ata*.txt
+*.log
+preprocess_debug*.py
+cleaning_analysis*.py
+*_debug*.py
+
+# IDE and Editor files
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
