@@ -174,17 +174,17 @@ For convenience, set these environment variables:
 # For OpenAI API
 export OPENAI_API_BASE="https://api.openai.com/v1"
 export OPENAI_API_KEY="your-api-key"
-export LLM_CHAT="gpt-4"
+export OPENAI_MODEL="gpt-4"
 
 # For DeepInfra API
 export OPENAI_API_BASE="https://api.deepinfra.com/v1/openai/"
 export OPENAI_API_KEY="your-deepinfra-key"
-export LLM_CHAT="meta-llama/Llama-4-Scout-17B-16E-Instruct"
+export OPENAI_MODEL="meta-llama/Llama-4-Scout-17B-16E-Instruct"
 
 # For Ollama Local
 export OPENAI_API_BASE="http://localhost:11434/v1"
 export OPENAI_API_KEY=""
-export LLM_CHAT="gemma3:4b"
+export OPENAI_MODEL="gemma3:4b"
 ```
 
 Then you can run simply:
