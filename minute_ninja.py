@@ -163,7 +163,7 @@ def parse_arguments():
     parser.add_argument('--context-size', type=int, help='Model context size in tokens (for reference)', 
                         default=32000)
     parser.add_argument('--segment-size', type=int, help='Word count for each text chunk in the Map-Reduce process', 
-                        default=2000)  # Default segment size for chunking
+                        default=1500)  # Default segment size for chunking
     parser.add_argument('--temperature', type=float, help='Temperature for text generation (0.0-2.0)', 
                         default=0.2)
     parser.add_argument('--top-p', type=float, help='Top-p value for nucleus sampling (0.0-1.0)', 
@@ -238,12 +238,34 @@ def generate_summary(transcript, model, api_base, api_key, language="english",
                 model=model,
                 messages=[{"role": "user", "content": map_prompt}],
                 temperature=temperature,
+                max_tokens=min(max_tokens, 1000)  # Limit output tokens for chunks
             )
             summary = response.choices[0].message.content
             chunk_summaries.append(summary)
+            
+            # Add delay to respect rate limits
+            time.sleep(1)  # Wait 1 second between requests
+            
         except Exception as e:
-            print(f"Error processing chunk {i+1}: {e}")
-            chunk_summaries.append(f"[Error summarizing chunk {i+1}]")
+            if "rate_limit_exceeded" in str(e):
+                print(f"Rate limit exceeded for chunk {i+1}. Waiting 60 seconds...")
+                time.sleep(60)  # Wait 1 minute before retrying
+                # Retry the request
+                try:
+                    response = client.chat.completions.create(
+                        model=model,
+                        messages=[{"role": "user", "content": map_prompt}],
+                        temperature=temperature,
+                        max_tokens=min(max_tokens, 1000)
+                    )
+                    summary = response.choices[0].message.content
+                    chunk_summaries.append(summary)
+                except Exception as retry_e:
+                    print(f"Error processing chunk {i+1} after retry: {retry_e}")
+                    chunk_summaries.append(f"[Error summarizing chunk {i+1}]")
+            else:
+                print(f"Error processing chunk {i+1}: {e}")
+                chunk_summaries.append(f"[Error summarizing chunk {i+1}]")
 
     # --- REDUCE STEP ---
     print(f"[STATUS] REDUCE: Consolidating {len(chunk_summaries)} summaries into final minutes...")
